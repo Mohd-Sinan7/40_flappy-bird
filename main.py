@@ -2,6 +2,7 @@ import pygame
 from game.game_engine import GameEngine
 
 # Initialize pygame/Start application
+pygame.mixer.pre_init(22050, -16, 1, 512)  # low-latency mono audio for sound effects
 pygame.init()
 
 # Screen dimensions

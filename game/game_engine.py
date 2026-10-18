@@ -1,6 +1,7 @@
 import pygame
 from .bird import Bird
 from .pipe import Pipe
+from .sound import SoundManager
 
 # Game Engine
 
@@ -26,6 +27,7 @@ class GameEngine:
         self.big_font = pygame.font.SysFont("Arial", 56, bold=True)
         self.small_font = pygame.font.SysFont("Arial", 24)
 
+        self.sounds = SoundManager()
         self._build_menu_buttons()
         self.reset(DEFAULT_DIFFICULTY)
 
@@ -63,9 +65,19 @@ class GameEngine:
 
         # Flap is edge-triggered (KEYDOWN / MOUSEBUTTONDOWN), not held.
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            self.bird.flap()
+            self._flap()
         if event.type == pygame.MOUSEBUTTONDOWN:
-            self.bird.flap()
+            self._flap()
+
+    def _flap(self):
+        self.bird.flap()
+        self.sounds.flap()
+
+    def _end_game(self):
+        """Mark the game as over (and play the death sound exactly once)."""
+        if not self.game_over:
+            self.game_over = True
+            self.sounds.die()
 
     def _handle_game_over_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -96,7 +108,7 @@ class GameEngine:
         self.bird.update()
 
         if self.bird.y - self.bird.radius <= 0 or self.bird.y + self.bird.radius >= self.height:
-            self.game_over = True
+            self._end_game()
             return
 
         self._spawn_timer += 1
@@ -110,11 +122,12 @@ class GameEngine:
             # Collision uses the bird's full circular body (not just its
             # center point), so clipping a pipe edge is always detected.
             if self.bird.collides_with_rect(pipe.top_rect()) or self.bird.collides_with_rect(pipe.bottom_rect()):
-                self.game_over = True
+                self._end_game()
 
             if not pipe.scored and pipe.x + pipe.width < self.bird.x:
                 pipe.scored = True
                 self.score += 1
+                self.sounds.score()
 
         self.pipes = [p for p in self.pipes if not p.off_screen()]
 
